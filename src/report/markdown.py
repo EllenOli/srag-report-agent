@@ -99,7 +99,7 @@ def write_dry_report(
             "",
             "- As janelas temporais sao ancoradas na data mais recente do dataset, nao na data atual.",
             "- UTI e proxy de uso de UTI entre casos hospitalizados, nao ocupacao real de leitos.",
-            "- Vacinacao mede registro vacinal COVID-19 entre casos com informacao conhecida, nao cobertura vacinal populacional.",
+            "- Vacinacao mede registro vacinal entre casos de SRAG com informacao conhecida, nao cobertura vacinal da populacao.",
             "- Esta versao ainda nao cruza noticias em tempo real.",
         ]
     )
@@ -213,7 +213,7 @@ def write_full_report(
             "## Limitacoes metodologicas",
             "",
             "- Taxa de UTI e proxy de uso de UTI entre hospitalizados, nao ocupacao real de leitos.",
-            "- Vacinacao mede registro vacinal COVID-19 entre casos com informacao conhecida, nao cobertura populacional.",
+            "- Vacinacao mede registro vacinal entre casos de SRAG com informacao conhecida, nao cobertura vacinal da populacao.",
             "- Noticias ajudam a contextualizar, mas nao alteram os calculos epidemiologicos.",
             "- Dados de SRAG podem ter atraso de notificacao, incompletude e revisoes posteriores.",
         ]
