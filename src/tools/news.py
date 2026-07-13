@@ -18,8 +18,7 @@ from dotenv import load_dotenv
 
 
 DEFAULT_QUERY = (
-    '"SRAG" OR "Sindrome Respiratoria Aguda Grave" Brasil noticias recentes '
-    "boletim epidemiologico saude"
+    "SRAG Sindrome Respiratoria Aguda Grave Brasil boletim InfoGripe Fiocruz noticias"
 )
 PROMPT_INJECTION_PATTERNS = [
     r"ignore (all )?(previous|prior|above) instructions",
@@ -106,10 +105,9 @@ def _normalize_tavily_result(raw: dict[str, Any]) -> NewsItem | None:
 def _search_duckduckgo(query: str, max_results: int) -> list[NewsItem]:
     import requests
 
-    ddg_query = "SRAG Sindrome Respiratoria Aguda Grave Brasil boletim epidemiologico noticias"
     response = requests.get(
         "https://html.duckduckgo.com/html/",
-        params={"q": ddg_query},
+        params={"q": query},
         headers={"User-Agent": "Mozilla/5.0"},
         timeout=20,
     )
