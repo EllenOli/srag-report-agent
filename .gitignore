@@ -15,6 +15,10 @@ __pycache__/
 outputs/
 .matplotlib-cache/
 
+# IDE (JetBrains/PyCharm, VS Code)
+.idea/
+.vscode/
+
 # SO
 .DS_Store
 Thumbs.db
