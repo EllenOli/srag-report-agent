@@ -11,7 +11,7 @@ LLM-written explanations.
 The solution uses the public **Open DATASUS** dataset on **SRAG** (Severe Acute
 Respiratory Syndrome / *Síndrome Respiratória Aguda Grave*) hospitalizations.
 
-> Built with **LangGraph**, **LangChain**, **OpenAI**, **Tavily**, **pandas**,
+> Built with **LangGraph**, **LangChain**, **OpenAI**, **DuckDuckGo**, **pandas**,
 > **SQLite** and **matplotlib**.
 
 ---
@@ -28,7 +28,7 @@ node; each external capability is a **tool**:
 | `plan` | Registers the execution plan (auditability) | — |
 | `metrics` | Computes the 4 metrics with parameterized SQL | SQLite |
 | `charts` | Builds the 30-day and 12-month charts | matplotlib |
-| `news` | Retrieves and **sanitizes** real-time SRAG news | Tavily → DuckDuckGo fallback |
+| `news` | Retrieves and **sanitizes** real-time SRAG news | DuckDuckGo (primary) → Tavily (optional) |
 | `analyze` | **Generative step**: the LLM writes the interpretation | OpenAI |
 | `validate` | Checks denominators, ranges and generated files | — |
 | `report` | Renders the final Markdown report | — |
@@ -94,7 +94,7 @@ cp .env.example .env               # then fill in your keys
 ```ini
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-4o-mini
-TAVILY_API_KEY=tvly-...            # optional; falls back to DuckDuckGo
+TAVILY_API_KEY=tvly-...            # optional secondary; DuckDuckGo is the primary source
 ```
 
 ### 1. Download the data
@@ -137,7 +137,8 @@ pytest
   passed in); external news is **sanitized** (HTML stripped, control chars
   removed, prompt-injection patterns neutralized); a medical disclaimer is always
   present; the pipeline **degrades gracefully** (template fallback if the LLM
-  fails, DuckDuckGo fallback if Tavily fails).
+  fails; DuckDuckGo is the primary news source with Tavily as an optional
+  secondary, and a relevance filter guarantees only on-topic items reach the report).
 - **Tools** — SQL metrics, chart generation, news retrieval and audit logging are
   independent, testable tools.
 - **Sensitive data** — only the minimal columns are ingested (no direct

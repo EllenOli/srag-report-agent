@@ -11,7 +11,7 @@ e explicações escritas por um LLM, fundamentadas nos dados.
 A solução usa a base pública do **Open DATASUS** sobre internações por **SRAG**
 (Síndrome Respiratória Aguda Grave).
 
-> Construído com **LangGraph**, **LangChain**, **OpenAI**, **Tavily**, **pandas**,
+> Construído com **LangGraph**, **LangChain**, **OpenAI**, **DuckDuckGo**, **pandas**,
 > **SQLite** e **matplotlib**.
 
 ---
@@ -28,7 +28,7 @@ etapa é um nó; cada capacidade externa é uma **tool**:
 | `plan` | Registra o plano de execução (auditabilidade) | — |
 | `metrics` | Calcula as 4 métricas com SQL parametrizado | SQLite |
 | `charts` | Gera os gráficos de 30 dias e 12 meses | matplotlib |
-| `news` | Busca e **sanitiza** notícias de SRAG em tempo real | Tavily → fallback DuckDuckGo |
+| `news` | Busca e **sanitiza** notícias de SRAG em tempo real | DuckDuckGo (primária) → Tavily (opcional) |
 | `analyze` | **Etapa generativa**: o LLM escreve a interpretação | OpenAI |
 | `validate` | Confere denominadores, faixas e arquivos gerados | — |
 | `report` | Renderiza o relatório final em Markdown | — |
@@ -96,7 +96,7 @@ cp .env.example .env               # depois preencha suas chaves
 ```ini
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-4o-mini
-TAVILY_API_KEY=tvly-...            # opcional; sem ela, usa o DuckDuckGo
+TAVILY_API_KEY=tvly-...            # secundária opcional; o DuckDuckGo é a fonte primária
 ```
 
 ### 1. Baixar os dados
@@ -139,7 +139,9 @@ pytest
   passados prontos); o conteúdo externo de notícias é **sanitizado** (HTML
   removido, caracteres de controle, padrões de prompt-injection neutralizados);
   há sempre um disclaimer médico; o pipeline **degrada graciosamente** (fallback
-  de template se o LLM falhar, fallback DuckDuckGo se a Tavily falhar).
+  de template se o LLM falhar; o DuckDuckGo é a fonte primária de notícias e a
+  Tavily é uma secundária opcional, com um filtro de relevância garantindo que só
+  entrem no relatório itens realmente sobre SRAG).
 - **Uso de Tools** — métricas SQL, geração de gráficos, busca de notícias e
   auditoria são tools independentes e testáveis.
 - **Dados sensíveis** — só as colunas mínimas são ingeridas (sem identificadores

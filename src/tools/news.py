@@ -156,82 +156,84 @@ def _is_relevant_srag(item: NewsItem) -> bool:
     return any(term in haystack for term in strict_terms) and any(term in haystack for term in news_terms)
 
 
+def _tavily_search(query: str, max_results: int) -> tuple[list[dict[str, Any]], int]:
+    """Optional secondary provider. Returns (items, rejected_count)."""
+    api_key = os.getenv("TAVILY_API_KEY", "").strip()
+    if not api_key:
+        return [], 0
+    from tavily import TavilyClient
+
+    client = TavilyClient(api_key=api_key)
+    response = client.search(
+        query=query, search_depth="basic", topic="news",
+        max_results=max_results, include_answer=False, include_raw_content=False,
+    )
+    items, rejected = [], 0
+    for raw in response.get("results", []):
+        item = _normalize_tavily_result(raw)
+        if item and _is_relevant_srag(item):
+            items.append(item.as_dict())
+        elif item:
+            rejected += 1
+    return items, rejected
+
+
 def fetch_srag_news(query: str = DEFAULT_QUERY, max_results: int = 5) -> dict[str, Any]:
-    """Search recent SRAG news and return sanitized results plus status metadata."""
+    """Search recent SRAG news and return sanitized results plus status metadata.
+
+    Provider strategy (validated empirically for this domain):
+        1. PRIMARY  — DuckDuckGo. For Brazilian, Portuguese-language SRAG news
+           (Fiocruz / InfoGripe bulletins) it consistently returns the most
+           relevant results, and needs no API key.
+        2. FALLBACK — Tavily (only if TAVILY_API_KEY is set). Kept as a resilience
+           layer; note that Tavily's news index underperforms for this specific
+           Brazilian-Portuguese niche.
+
+    A relevance filter and full sanitization are applied regardless of provider,
+    so only on-topic, safe content ever reaches the report.
+    """
     load_dotenv()
     sanitized_query = sanitize_external_text(query, max_chars=220) or DEFAULT_QUERY
-    api_key = os.getenv("TAVILY_API_KEY", "").strip()
     searched_at = datetime.now(timezone.utc).isoformat()
 
-    if not api_key:
-        return {
-            "status": "fallback",
-            "provider": "tavily",
-            "query": sanitized_query,
-            "searched_at_utc": searched_at,
-            "items": [],
-            "message": "TAVILY_API_KEY ausente; relatorio gerado sem noticias em tempo real.",
-        }
-
+    # 1) Primary: DuckDuckGo
+    ddg_error = None
     try:
-        from tavily import TavilyClient
+        ddg_items = [item.as_dict() for item in _search_duckduckgo(sanitized_query, max_results)]
+        if ddg_items:
+            return {
+                "status": "ok", "provider": "duckduckgo",
+                "query": sanitized_query, "searched_at_utc": searched_at,
+                "items": ddg_items,
+                "message": "noticias sanitizadas via DuckDuckGo (fonte primaria).",
+            }
+    except Exception as exc:  # noqa: BLE001 - never break report generation
+        ddg_error = type(exc).__name__
 
-        client = TavilyClient(api_key=api_key)
-        response = client.search(
-            query=sanitized_query,
-            search_depth="basic",
-            topic="news",
-            max_results=max_results,
-            include_answer=False,
-            include_raw_content=False,
-        )
-        items = []
-        rejected = 0
-        for raw in response.get("results", []):
-            item = _normalize_tavily_result(raw)
-            if item and _is_relevant_srag(item):
-                items.append(item.as_dict())
-            elif item:
-                rejected += 1
-        if items:
-            status = "ok"
-            provider = "tavily"
-            message = f"noticias sanitizadas com sucesso; {rejected} resultado(s) rejeitado(s) por baixa relevancia"
-        else:
-            try:
-                ddg_items = _search_duckduckgo(sanitized_query, max_results=max_results)
-                items = [item.as_dict() for item in ddg_items]
-                status = "ok" if items else "fallback"
-                provider = "duckduckgo" if items else "tavily+duckduckgo"
-                message = (
-                    "fallback DuckDuckGo acionado com resultados sanitizados"
-                    if items
-                    else f"busca sem resultados relevantes; {rejected} resultado(s) Tavily rejeitado(s)"
-                )
-            except Exception as ddg_exc:  # noqa: BLE001
-                status = "fallback"
-                provider = "tavily+duckduckgo"
-                message = (
-                    f"busca sem resultados relevantes no Tavily e falha no DuckDuckGo: "
-                    f"{type(ddg_exc).__name__}"
-                )
-        return {
-            "status": status,
-            "provider": provider,
-            "query": sanitized_query,
-            "searched_at_utc": searched_at,
-            "items": items,
-            "message": message,
-        }
-    except Exception as exc:  # noqa: BLE001 - tool fallback must not break report generation
-        return {
-            "status": "fallback",
-            "provider": "tavily",
-            "query": sanitized_query,
-            "searched_at_utc": searched_at,
-            "items": [],
-            "message": f"falha na busca de noticias; fallback acionado: {type(exc).__name__}",
-        }
+    # 2) Fallback: Tavily (optional, only if a key is configured)
+    try:
+        tavily_items, rejected = _tavily_search(sanitized_query, max_results)
+        if tavily_items:
+            return {
+                "status": "ok", "provider": "tavily",
+                "query": sanitized_query, "searched_at_utc": searched_at,
+                "items": tavily_items,
+                "message": f"fallback Tavily acionado; {rejected} resultado(s) rejeitado(s) por relevancia.",
+            }
+    except Exception as exc:  # noqa: BLE001
+        tavily_error = type(exc).__name__
+    else:
+        tavily_error = None
+
+    # 3) Nothing usable — report is still generated, without real-time news
+    return {
+        "status": "fallback", "provider": "duckduckgo+tavily",
+        "query": sanitized_query, "searched_at_utc": searched_at, "items": [],
+        "message": (
+            "sem noticias relevantes nesta execucao "
+            f"(DuckDuckGo: {ddg_error or 'sem resultados'}; Tavily: {tavily_error or 'sem resultados/So key'})."
+        ),
+    }
 
 
 if __name__ == "__main__":

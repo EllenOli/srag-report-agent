@@ -76,7 +76,7 @@ def build():
     # External resources (bottom)
     box(ax, 1.6, 1.9, 2.0, 0.9, "SQLite database\n(cleaned DATASUS\ndata)", fc="#EAF6F0", ec=GREEN, tc=GREEN)
     box(ax, 4.1, 1.9, 2.0, 0.9, "Matplotlib\n(PNG charts)", fc="#EAF6F0", ec=GREEN, tc=GREEN)
-    box(ax, 6.6, 1.9, 2.3, 0.9, "Real-time news\nTavily → DuckDuckGo\n(fallback)", fc="#FDF3E6", ec=AMBER, tc=AMBER)
+    box(ax, 6.6, 1.9, 2.3, 0.9, "Real-time news\nDuckDuckGo (primary)\n→ Tavily (optional)", fc="#FDF3E6", ec=AMBER, tc=AMBER)
     box(ax, 9.2, 1.9, 2.0, 0.9, "OpenAI LLM\n(gpt-4o-mini)", fc="#DDEBFF", ec=NAVY, tc=NAVY)
 
     # ligacoes nodes -> recursos
