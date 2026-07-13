@@ -1,0 +1,22 @@
+# Dados
+pandas>=2.0
+numpy>=1.26
+
+# Agente / LLM
+langgraph>=0.2
+langchain>=0.3
+langchain-openai>=0.2
+langchain-community>=0.3
+openai>=1.30
+
+# Ferramentas
+tavily-python>=0.5          # busca de noticias em tempo real
+requests>=2.32              # fallback DuckDuckGo
+matplotlib>=3.8             # graficos
+python-dotenv>=1.0
+
+# Relatorio
+markdown>=3.5
+
+# Testes
+pytest>=8.0

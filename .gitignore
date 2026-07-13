@@ -1,0 +1,20 @@
+# Dados brutos e banco (não versionar dados sensíveis do DATASUS)
+data/*.csv
+data/*.CSV
+data/*.db
+data/*.sqlite
+
+# Ambiente e segredos
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Saídas geradas (relatórios, gráficos e logs de auditoria são artefatos de execução)
+outputs/
+.matplotlib-cache/
+
+# SO
+.DS_Store
+Thumbs.db
