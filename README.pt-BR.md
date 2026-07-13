@@ -3,6 +3,8 @@
 
 # Agente de Relatório de SRAG — Relatórios Epidemiológicos Gerados por IA
 
+![tests](https://github.com/EllenOli/srag-report-agent/actions/workflows/tests.yml/badge.svg)
+
 Uma Prova de Conceito para a **Indicium HealthCare Inc.**: um agente de IA que
 consulta uma base de dados real de saúde, busca notícias em tempo real, calcula
 métricas epidemiológicas-chave e **gera um relatório automatizado** com gráficos
@@ -101,8 +103,15 @@ TAVILY_API_KEY=tvly-...            # secundária opcional; o DuckDuckGo é a fon
 
 ### 1. Baixar os dados
 
-No Open DATASUS (SRAG 2019–2026), baixe o CSV de 2019 (`INFLUD19-...csv`) e o
-dicionário de dados para a pasta `data/`.
+No Open DATASUS (SRAG 2019–2026), baixe o CSV de 2019 (`INFLUD19-...csv`, o
+arquivo referenciado no enunciado) e o dicionário de dados para a pasta `data/`.
+
+> **O pipeline é agnóstico a ano.** O ETL aceita qualquer ano do DATASUS (ou
+> vários de uma vez: `--csv data/2025.csv data/2026.csv`), e a métrica de
+> vacinação escolhe automaticamente a coluna de vacina com maior cobertura. Por
+> isso o arquivo de 2019 reporta a vacina de **gripe**, enquanto um arquivo de
+> 2021+ reportaria a de **COVID-19** — sem mudar código. Aponte para o ano mais
+> recente para uma análise atual, da era COVID.
 
 ### 2. Construir o banco
 

@@ -3,6 +3,8 @@
 
 # SRAG Report Agent — AI-Generated Epidemiological Reports
 
+![tests](https://github.com/EllenOli/srag-report-agent/actions/workflows/tests.yml/badge.svg)
+
 A Proof of Concept for **Indicium HealthCare Inc.**: an AI agent that queries a
 real health database, retrieves real-time news, computes key epidemiological
 metrics and **generates an automated report** with charts and grounded,
@@ -100,7 +102,14 @@ TAVILY_API_KEY=tvly-...            # optional secondary; DuckDuckGo is the prima
 ### 1. Download the data
 
 From Open DATASUS (SRAG 2019–2026), download the 2019 CSV
-(`INFLUD19-...csv`) and the data dictionary into `data/`.
+(`INFLUD19-...csv`, the file referenced in the challenge) and the data
+dictionary into `data/`.
+
+> **The pipeline is year-agnostic.** The ETL accepts any DATASUS year (or several
+> at once: `--csv data/2025.csv data/2026.csv`), and the vaccination metric
+> automatically picks the vaccine column with the most coverage. So the 2019 file
+> reports the **flu** vaccine, while a 2021+ file would report **COVID-19** — no
+> code change needed. Point it at the latest year for current, COVID-era analysis.
 
 ### 2. Build the database
 
