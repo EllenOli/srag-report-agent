@@ -1,4 +1,4 @@
-"""Markdown report writer for the first SRAG PoC milestone."""
+"""Markdown report writer for the SRAG report (full and dry versions)."""
 from __future__ import annotations
 
 import sqlite3

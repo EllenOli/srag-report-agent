@@ -8,7 +8,7 @@ from src.tools import metrics
 
 @pytest.fixture()
 def sample_db(tmp_path):
-    """Small in-memory-like SQLite fixture with known values."""
+    """Small SQLite fixture with known values."""
     db = tmp_path / "srag_test.db"
     conn = sqlite3.connect(db)
     conn.execute(
@@ -18,12 +18,12 @@ def sample_db(tmp_path):
         )"""
     )
     rows = [
-        # data,      uf, evol, hosp, uti, vgripe, vcov, classi
+        # date,       uf, evol, hosp, uti, vflu, vcov, classi
         ("2019-01-01", "SP", 1, 1, 1, 1, None, 5),
-        ("2019-01-02", "SP", 2, 1, 2, 2, None, 5),  # obito
+        ("2019-01-02", "SP", 2, 1, 2, 2, None, 5),  # death
         ("2019-01-03", "RJ", 1, 1, 1, 1, None, 4),
-        ("2019-01-04", "RJ", 9, 1, 9, 9, None, 9),  # ignorados
-        ("2019-01-05", "MG", 2, 1, 1, 2, None, 5),  # obito, uti
+        ("2019-01-04", "RJ", 9, 1, 9, 9, None, 9),  # ignored
+        ("2019-01-05", "MG", 2, 1, 1, 2, None, 5),  # death, icu
     ]
     conn.executemany("INSERT INTO srag VALUES (?,?,?,?,?,?,?,?)", rows)
     conn.commit()
@@ -31,30 +31,30 @@ def sample_db(tmp_path):
     return str(db)
 
 
-def test_mortalidade_ignora_desconhecidos(sample_db):
+def test_mortality_ignores_unknown_outcomes(sample_db):
     m = metrics.mortality_rate(sample_db)
-    # 2 obitos entre 4 desfechos conhecidos (exclui o evolucao=9) -> 0.5
+    # 2 deaths among 4 known outcomes (excludes evolucao=9) -> 0.5
     assert m.numerator == 2
     assert m.denominator == 4
     assert m.value == 0.5
 
 
-def test_ocupacao_uti_e_proxy_entre_conhecidos(sample_db):
+def test_icu_occupancy_is_proxy_among_known(sample_db):
     m = metrics.icu_occupancy_rate(sample_db)
-    # uti=1 em 3 casos; conhecidos (1 ou 2) = 4 -> 0.75
+    # uti=1 in 3 cases; known (1 or 2) = 4 -> 0.75
     assert m.numerator == 3
     assert m.denominator == 4
     assert m.value == 0.75
 
 
-def test_vacinacao_escolhe_coluna_com_mais_cobertura(sample_db):
-    # vacina_covid e todo NULL; vacina_gripe tem cobertura -> deve escolher gripe
+def test_vaccination_picks_column_with_most_coverage(sample_db):
+    # vacina_covid is all NULL; vacina_gripe has coverage -> must pick flu
     m = metrics.vaccination_rate(sample_db)
     assert "gripe" in m.name.lower()
-    assert m.denominator == 4  # 1,2,1,2 conhecidos (o 9 e ignorado)
+    assert m.denominator == 4  # 1,2,1,2 known (the 9 is ignored)
 
 
-def test_taxas_estao_no_intervalo_valido(sample_db):
+def test_rates_are_within_valid_range(sample_db):
     for m in (metrics.mortality_rate(sample_db),
               metrics.icu_occupancy_rate(sample_db),
               metrics.vaccination_rate(sample_db)):

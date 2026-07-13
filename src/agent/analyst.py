@@ -23,7 +23,7 @@ from typing import Any
 
 from dotenv import load_dotenv
 
-# Fallbacks determinísticos (reaproveitados quando o LLM não está disponível).
+# Deterministic fallbacks (reused when the LLM is unavailable).
 from src.report.markdown import (
     _executive_summary,
     _news_interpretation,

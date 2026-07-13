@@ -1,19 +1,19 @@
-"""ETL: CSV bruto do Open DATASUS (SRAG) -> tabela limpa em SQLite.
+"""ETL: raw Open DATASUS (SRAG) CSV -> clean SQLite table.
 
-Por que este passo existe:
-    O arquivo do DATASUS tem ~100 colunas e ~165 mil linhas, com muitos campos
-    mal preenchidos e dados sensíveis (clínicos/demográficos). O agente NÃO deve
-    ler esse CSV cru a cada pergunta. Aqui fazemos a ingestão UMA vez:
-      1. selecionamos apenas as colunas necessárias para as 4 métricas;
-      2. descartamos identificadores diretos (dados sensíveis / LGPD);
-      3. padronizamos datas e derivamos uma única `data_caso`;
-      4. gravamos uma tabela enxuta e tipada (`srag`) no SQLite.
+Why this step exists:
+    The DATASUS file has ~100 columns and ~165k rows, with many poorly filled
+    fields and sensitive data (clinical/demographic). The agent must NOT read
+    this raw CSV on every question. We ingest it ONCE:
+      1. select only the columns needed for the 4 metrics;
+      2. drop direct identifiers (sensitive data / LGPD);
+      3. normalize dates and derive a single `data_caso`;
+      4. write a lean, typed table (`srag`) into SQLite.
 
-    O agente depois consulta essa tabela com SQL parametrizado — rápido, seguro
-    e auditável.
+    The agent then queries this table with parameterized SQL — fast, safe and
+    auditable.
 
-Uso:
-    python -m src.etl.build_db --csv data/INFLUD24.csv
+Usage:
+    python -m src.etl.build_db --csv data/INFLUD19-23-03-2026.csv
 """
 from __future__ import annotations
 
@@ -24,34 +24,34 @@ from pathlib import Path
 import pandas as pd
 
 # ---------------------------------------------------------------------------
-# Colunas que nos interessam (nome no DATASUS -> uso).
-# Mantemos só o necessário para as métricas + agregações não identificáveis.
+# Columns we care about (DATASUS name -> our name).
+# Keep only what the metrics need + non-identifiable aggregations.
 # ---------------------------------------------------------------------------
 COLS = {
-    "DT_SIN_PRI":  "dt_sintomas",     # data 1os sintomas  -> contagem de casos
-    "DT_NOTIFIC":  "dt_notificacao",  # fallback de data
-    "SG_UF_NOT":   "uf",              # UF (agregada, não identifica pessoa)
-    "EVOLUCAO":    "evolucao",        # 1=cura 2=óbito 3=óbito outras 9=ignorado
-    "HOSPITAL":    "hospitalizado",   # 1=Sim 2=Não 9=Ignorado
-    "UTI":         "uti",             # 1=Sim 2=Não 9=Ignorado
-    "VACINA":      "vacina_gripe",    # 1=Sim 2=Não 9=Ignorado (vacina contra GRIPE)
-    "VACINA_COV":  "vacina_covid",    # 1=Sim 2=Nao 9=Ignorado (vacina COVID-19)
-    "CLASSI_FIN":  "classificacao",   # classificação final do caso
+    "DT_SIN_PRI":  "dt_sintomas",     # first-symptoms date -> case counting
+    "DT_NOTIFIC":  "dt_notificacao",  # date fallback
+    "SG_UF_NOT":   "uf",              # state (aggregated, does not identify a person)
+    "EVOLUCAO":    "evolucao",        # 1=cure 2=death 3=other-cause death 9=ignored
+    "HOSPITAL":    "hospitalizado",   # 1=Yes 2=No 9=Ignored
+    "UTI":         "uti",             # 1=Yes 2=No 9=Ignored
+    "VACINA":      "vacina_gripe",    # 1=Yes 2=No 9=Ignored (FLU vaccine)
+    "VACINA_COV":  "vacina_covid",    # 1=Yes 2=No 9=Ignored (COVID-19 vaccine)
+    "CLASSI_FIN":  "classificacao",   # final case classification
 }
-# UFs alternativas caso a principal não exista no arquivo.
+# Alternative state columns in case the main one is absent from the file.
 UF_FALLBACKS = ["SG_UF_NOT", "SG_UF", "CO_UF_NOT"]
 DATE_COLS_RAW = ["DT_SIN_PRI", "DT_NOTIFIC"]
 
 
 def _available_columns(csv_path: str) -> list[str]:
-    """Lê só o cabeçalho para saber quais colunas existem de fato."""
+    """Read only the header to learn which columns actually exist."""
     head = pd.read_csv(csv_path, sep=";", nrows=0, encoding="latin-1")
     return list(head.columns)
 
 
 def _pick_columns(available: list[str]) -> dict[str, str]:
     mapping = {src: dst for src, dst in COLS.items() if src in available}
-    if "SG_UF_NOT" not in mapping:  # tenta uma UF alternativa
+    if "SG_UF_NOT" not in mapping:  # try an alternative state column
         for alt in UF_FALLBACKS:
             if alt in available:
                 mapping[alt] = "uf"
@@ -60,17 +60,17 @@ def _pick_columns(available: list[str]) -> dict[str, str]:
 
 
 def _to_datetime(series: pd.Series) -> pd.Series:
-    """Converte datas do DATASUS de forma robusta.
+    """Robustly parse DATASUS dates.
 
-    O dicionário indica DD/MM/AAAA, mas a exportação atual do portal usa ISO
-    (ex.: '2019-07-22T00:00:00.000Z'). Tentamos ISO primeiro e, para o que
-    sobrar, tentamos o formato brasileiro — sem quebrar em nenhum dos dois.
+    The dictionary says DD/MM/YYYY, but the current portal export uses ISO
+    (e.g. '2019-07-22T00:00:00.000Z'). We try ISO first and, for whatever is
+    left, try the Brazilian format — without breaking on either.
     """
     iso = pd.to_datetime(series, errors="coerce", utc=True).dt.tz_localize(None)
-    faltando = iso.isna() & series.notna()
-    if faltando.any():
-        br = pd.to_datetime(series[faltando], format="%d/%m/%Y", errors="coerce")
-        iso.loc[faltando] = br
+    missing = iso.isna() & series.notna()
+    if missing.any():
+        br = pd.to_datetime(series[missing], format="%d/%m/%Y", errors="coerce")
+        iso.loc[missing] = br
     return iso
 
 
@@ -79,7 +79,7 @@ def _parse_dates(df: pd.DataFrame) -> pd.DataFrame:
         dst = COLS.get(raw)
         if dst and dst in df.columns:
             df[dst] = _to_datetime(df[dst])
-    # data_caso = primeiro sintoma, com fallback para notificação
+    # data_caso = first symptoms, falling back to notification date
     dt_sin = df.get("dt_sintomas")
     dt_not = df.get("dt_notificacao")
     if dt_sin is not None:
@@ -90,10 +90,10 @@ def _parse_dates(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _read_one(csv_path: str) -> pd.DataFrame:
-    """Lê um CSV do DATASUS em chunks, selecionando só as colunas úteis."""
+    """Read one DATASUS CSV in chunks, keeping only the useful columns."""
     available = _available_columns(csv_path)
     mapping = _pick_columns(available)
-    print(f"\n[{Path(csv_path).name}] {len(available)} colunas | usando {list(mapping.keys())}")
+    print(f"\n[{Path(csv_path).name}] {len(available)} columns | using {list(mapping.keys())}")
     frames = []
     chunks = pd.read_csv(
         csv_path, sep=";", encoding="latin-1",
@@ -101,26 +101,26 @@ def _read_one(csv_path: str) -> pd.DataFrame:
     )
     for i, chunk in enumerate(chunks, 1):
         frames.append(chunk.rename(columns=mapping))
-        print(f"  chunk {i}: +{len(chunk)} linhas")
+        print(f"  chunk {i}: +{len(chunk)} rows")
     return pd.concat(frames, ignore_index=True)
 
 
 def build(csv_paths: list[str], db_path: str = "data/srag.db") -> None:
-    # Aceita um ou vários CSVs (ex.: 2025 + 2026) e concatena tudo.
+    # Accept one or several CSVs (e.g. 2025 + 2026) and concatenate them.
     df = pd.concat([_read_one(p) for p in csv_paths], ignore_index=True)
 
-    # Tipagem: campos categóricos viram numéricos; datas viram datetime.
+    # Typing: categorical fields become numeric; dates become datetime.
     for col in ["evolucao", "hospitalizado", "uti", "vacina_gripe", "vacina_covid", "classificacao"]:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
     df = _parse_dates(df)
 
-    # Descarta linhas sem data (não servem para nenhuma métrica temporal).
+    # Drop rows with no date (useless for any time-based metric).
     before = len(df)
     df = df.dropna(subset=["data_caso"])
-    print(f"Linhas com data válida: {len(df)} (removidas {before - len(df)})")
+    print(f"Rows with a valid date: {len(df)} (dropped {before - len(df)})")
 
-    # Guarda só as colunas finais e ordena.
+    # Keep only the final columns and sort.
     final_cols = [c for c in ["data_caso", "uf", "evolucao", "hospitalizado",
                               "uti", "vacina_gripe", "vacina_covid", "classificacao"] if c in df.columns]
     df = df[final_cols].sort_values("data_caso").reset_index(drop=True)
@@ -130,14 +130,14 @@ def build(csv_paths: list[str], db_path: str = "data/srag.db") -> None:
     with sqlite3.connect(db_path) as conn:
         df.to_sql("srag", conn, if_exists="replace", index=False)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_data ON srag(data_caso)")
-    print(f"\nOK -> {len(df)} registros gravados em {db_path} (tabela 'srag').")
-    print("Período coberto:", df["data_caso"].min(), "->", df["data_caso"].max())
+    print(f"\nOK -> {len(df)} rows written to {db_path} (table 'srag').")
+    print("Period covered:", df["data_caso"].min(), "->", df["data_caso"].max())
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv", required=True, nargs="+",
-                    help="Um ou mais CSVs do DATASUS (ex.: --csv data/2025.csv data/2026.csv)")
+                    help="One or more DATASUS CSVs (e.g. --csv data/2025.csv data/2026.csv)")
     ap.add_argument("--db", default="data/srag.db")
     args = ap.parse_args()
     build(args.csv, args.db)

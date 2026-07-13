@@ -73,13 +73,13 @@ def news_node(state: ReportState) -> ReportState:
 
 
 def analyze_node(state: ReportState) -> ReportState:
-    """Nó GENERATIVO: o LLM interpreta métricas e notícias (com guardrails)."""
+    """GENERATIVE node: the LLM interprets metrics and news (with guardrails)."""
     if state.get("dry_run"):
         state["audit"].log("skip", "analyze", {"reason": "dry_run"})
         return {"narrative": {}}
     summary = dataset_summary(state["db_path"])
     narrative = generate_narrative(state["metrics"], state["news"], summary)
-    # Não logamos o texto todo, mas registramos o uso do LLM (governança).
+    # We don't log the full text, but we record the LLM usage (governance).
     state["audit"].log("llm_call", "analyze", {
         "llm_used": narrative.get("llm_used"),
         "model": narrative.get("model"),
