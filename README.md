@@ -18,7 +18,7 @@ Respiratory Syndrome / *Síndrome Respiratória Aguda Grave*) hospitalizations.
 
 ## Architecture
 
-![Architecture diagram](docs/arquitetura.png)
+![Architecture diagram](docs/architecture.png)
 
 A **LangGraph orchestrator** runs an explicit, auditable pipeline. Each step is a
 node; each external capability is a **tool**:
@@ -71,7 +71,7 @@ src/
   report/markdown.py     # final report writer
 docs/
   architecture_diagram.py  # generates the architecture PDF/PNG
-  arquitetura.pdf          # required conceptual diagram
+  architecture.pdf          # required conceptual diagram
   dicionario_srag.txt      # DATASUS data dictionary (column codes)
 tests/                   # unit tests (metrics + guardrails)
 ```

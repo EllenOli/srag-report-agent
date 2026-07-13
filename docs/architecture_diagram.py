@@ -1,9 +1,9 @@
-"""Gera o diagrama conceitual da arquitetura da solucao (PDF + PNG).
+"""Generate the conceptual architecture diagram of the solution (PDF + PNG).
 
     python docs/architecture_diagram.py
 
-Mostra o Agente Principal (Orquestrador LangGraph), as Tools, o LLM, o banco
-de dados e as fontes de noticias, conforme exigido na entrega.
+Shows the Main Agent (LangGraph orchestrator), the Tools, the LLM, the database
+and the news sources, as required by the challenge deliverables.
 """
 from pathlib import Path
 
@@ -96,10 +96,10 @@ def build():
 
     OUT.mkdir(exist_ok=True)
     fig.tight_layout()
-    fig.savefig(OUT / "arquitetura.pdf", bbox_inches="tight")
-    fig.savefig(OUT / "arquitetura.png", dpi=140, bbox_inches="tight")
+    fig.savefig(OUT / "architecture.pdf", bbox_inches="tight")
+    fig.savefig(OUT / "architecture.png", dpi=140, bbox_inches="tight")
     plt.close(fig)
-    print("Gerado: docs/arquitetura.pdf e docs/arquitetura.png")
+    print("Generated: docs/architecture.pdf and docs/architecture.png")
 
 
 if __name__ == "__main__":

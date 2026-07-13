@@ -18,7 +18,7 @@ A solução usa a base pública do **Open DATASUS** sobre internações por **SR
 
 ## Arquitetura
 
-![Diagrama de arquitetura](docs/arquitetura.png)
+![Diagrama de arquitetura](docs/architecture.png)
 
 Um **orquestrador LangGraph** executa um pipeline explícito e auditável. Cada
 etapa é um nó; cada capacidade externa é uma **tool**:
@@ -73,7 +73,7 @@ src/
   report/markdown.py     # gerador do relatório final
 docs/
   architecture_diagram.py  # gera o PDF/PNG da arquitetura
-  arquitetura.pdf          # diagrama conceitual exigido
+  architecture.pdf          # diagrama conceitual exigido
   dicionario_srag.txt      # dicionário de dados do DATASUS (códigos das colunas)
 tests/                   # testes unitários (métricas + guardrails)
 ```

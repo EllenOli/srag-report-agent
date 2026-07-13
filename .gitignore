@@ -19,5 +19,11 @@ outputs/
 .DS_Store
 Thumbs.db
 
-# Material privado de estudo (NAO publicar) — fica so local
+# Anotacoes internas e material de estudo (NAO publicar) — ficam so locais
 docs/defesa.md
+docs/entrega_marco_3.md
+docs/entrega_marcos_1_2.md
+docs/relatorio_exemplo.md
+
+# PDF bruto do dicionario (redundante; usamos docs/dicionario_srag.txt)
+data/*.pdf
