@@ -10,9 +10,9 @@ from langgraph.graph import END, StateGraph
 from src.agent.analyst import generate_narrative
 from src.report.markdown import dataset_summary, write_dry_report, write_full_report
 from src.tools.audit import AuditLogger
-from src.tools.charts import gerar_todos
-from src.tools.metrics import todas_as_metricas
-from src.tools.news import buscar_noticias_srag
+from src.tools.charts import generate_all_charts
+from src.tools.metrics import get_all_metrics
+from src.tools.news import fetch_srag_news
 
 
 class ReportState(TypedDict, total=False):
@@ -44,14 +44,14 @@ def plan_node(state: ReportState) -> ReportState:
 
 
 def metrics_node(state: ReportState) -> ReportState:
-    metrics = todas_as_metricas(state["db_path"])
-    state["audit"].log("tool_call", "metrics", {"tool": "todas_as_metricas", "result": metrics})
+    metrics = get_all_metrics(state["db_path"])
+    state["audit"].log("tool_call", "metrics", {"tool": "get_all_metrics", "result": metrics})
     return {"metrics": metrics}
 
 
 def charts_node(state: ReportState) -> ReportState:
-    charts = gerar_todos(state["db_path"])
-    state["audit"].log("tool_call", "charts", {"tool": "gerar_todos", "result": charts})
+    charts = generate_all_charts(state["db_path"])
+    state["audit"].log("tool_call", "charts", {"tool": "generate_all_charts", "result": charts})
     return {"charts": charts}
 
 
@@ -67,8 +67,8 @@ def news_node(state: ReportState) -> ReportState:
         }
         state["audit"].log("skip", "news", news)
         return {"news": news}
-    news = buscar_noticias_srag()
-    state["audit"].log("tool_call", "news", {"tool": "buscar_noticias_srag", "result": news})
+    news = fetch_srag_news()
+    state["audit"].log("tool_call", "news", {"tool": "fetch_srag_news", "result": news})
     return {"news": news}
 
 
@@ -91,12 +91,12 @@ def analyze_node(state: ReportState) -> ReportState:
 def validate_node(state: ReportState) -> ReportState:
     issues: list[str] = []
     for metric in state["metrics"]:
-        if metric["denominador"] < 0 or metric["numerador"] < 0:
-            issues.append(f"negative count in {metric['nome']}")
-        if metric["unidade"] == "%" and metric["nome"] != "Taxa de aumento de casos" and not 0 <= metric["valor"] <= 1:
-            issues.append(f"rate out of expected range in {metric['nome']}")
-        if metric["nome"] == "Taxa de aumento de casos" and metric["valor"] < -1:
-            issues.append(f"case increase below -100% in {metric['nome']}")
+        if metric["denominator"] < 0 or metric["numerator"] < 0:
+            issues.append(f"negative count in {metric['name']}")
+        if metric["unit"] == "%" and metric["name"] != "Taxa de aumento de casos" and not 0 <= metric["value"] <= 1:
+            issues.append(f"rate out of expected range in {metric['name']}")
+        if metric["name"] == "Taxa de aumento de casos" and metric["value"] < -1:
+            issues.append(f"case increase below -100% in {metric['name']}")
     for label, path in state["charts"].items():
         if not Path(path).exists():
             issues.append(f"missing chart {label}: {path}")

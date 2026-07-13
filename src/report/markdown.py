@@ -16,12 +16,12 @@ def dataset_summary(db_path: str) -> dict[str, Any]:
 
 
 def _format_metric(metric: dict[str, Any]) -> str:
-    value = metric["valor"] * 100 if metric["unidade"] == "%" else metric["valor"]
-    suffix = "%" if metric["unidade"] == "%" else metric["unidade"]
+    value = metric["value"] * 100 if metric["unit"] == "%" else metric["value"]
+    suffix = "%" if metric["unit"] == "%" else metric["unit"]
     return (
-        f"| {metric['nome']} | {value:.2f}{suffix} | "
-        f"{metric['numerador']} / {metric['denominador']} | "
-        f"{metric['janela']} | {metric['observacao']} |"
+        f"| {metric['name']} | {value:.2f}{suffix} | "
+        f"{metric['numerator']} / {metric['denominator']} | "
+        f"{metric['window']} | {metric['note']} |"
     )
 
 
@@ -44,8 +44,8 @@ def write_dry_report(
     summary = dataset_summary(db_path)
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
-    daily_chart = _asset_link(output_path, charts["casos_diarios"])
-    monthly_chart = _asset_link(output_path, charts["casos_mensais"])
+    daily_chart = _asset_link(output_path, charts["daily"])
+    monthly_chart = _asset_link(output_path, charts["monthly"])
 
     lines = [
         "# Relatorio automatizado de SRAG - versao seca",
@@ -122,8 +122,8 @@ def write_full_report(
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     news_items = news.get("items", [])
-    daily_chart = _asset_link(output_path, charts["casos_diarios"])
-    monthly_chart = _asset_link(output_path, charts["casos_mensais"])
+    daily_chart = _asset_link(output_path, charts["daily"])
+    monthly_chart = _asset_link(output_path, charts["monthly"])
 
     # Narrativa gerada pelo LLM (com fallback determinístico embutido no analyst).
     narrative = narrative or {}
@@ -224,27 +224,27 @@ def write_full_report(
 
 
 def _technical_reading(metrics: list[dict[str, Any]]) -> str:
-    by_name = {m["nome"]: m for m in metrics}
+    by_name = {m["name"]: m for m in metrics}
     increase = by_name["Taxa de aumento de casos"]
     mortality = by_name["Taxa de mortalidade"]
-    direction = "alta" if increase["valor"] > 0 else "queda"
+    direction = "alta" if increase["value"] > 0 else "queda"
     return (
         f"No recorte mais recente, a serie mostra {direction} de "
-        f"{abs(increase['valor'] * 100):.2f}% em relacao ao periodo anterior. "
+        f"{abs(increase['value'] * 100):.2f}% em relacao ao periodo anterior. "
         f"A mortalidade calculada sobre desfechos conhecidos e de "
-        f"{mortality['valor'] * 100:.2f}%, o que deve ser lido junto das ressalvas "
+        f"{mortality['value'] * 100:.2f}%, o que deve ser lido junto das ressalvas "
         "sobre atraso de notificacao e preenchimento incompleto dos campos."
     )
 
 
 def _executive_summary(metrics: list[dict[str, Any]], news: dict[str, Any]) -> str:
-    by_name = {m["nome"]: m for m in metrics}
+    by_name = {m["name"]: m for m in metrics}
     increase = by_name["Taxa de aumento de casos"]
     mortality = by_name["Taxa de mortalidade"]
     news_count = len(news.get("items", []))
     return (
-        f"A base tratada indica variacao de {increase['valor'] * 100:.2f}% nos casos "
-        f"no recorte comparativo mais recente e mortalidade de {mortality['valor'] * 100:.2f}% "
+        f"A base tratada indica variacao de {increase['value'] * 100:.2f}% nos casos "
+        f"no recorte comparativo mais recente e mortalidade de {mortality['value'] * 100:.2f}% "
         "entre casos com desfecho conhecido. "
         f"O contexto externo foi composto por {news_count} noticia(s) sanitizada(s); "
         "as noticias servem apenas como apoio interpretativo, sem modificar as metricas."

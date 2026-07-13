@@ -156,7 +156,7 @@ def _is_relevant_srag(item: NewsItem) -> bool:
     return any(term in haystack for term in strict_terms) and any(term in haystack for term in news_terms)
 
 
-def buscar_noticias_srag(query: str = DEFAULT_QUERY, max_results: int = 5) -> dict[str, Any]:
+def fetch_srag_news(query: str = DEFAULT_QUERY, max_results: int = 5) -> dict[str, Any]:
     """Search recent SRAG news and return sanitized results plus status metadata."""
     load_dotenv()
     sanitized_query = sanitize_external_text(query, max_chars=220) or DEFAULT_QUERY
@@ -237,4 +237,4 @@ def buscar_noticias_srag(query: str = DEFAULT_QUERY, max_results: int = 5) -> di
 if __name__ == "__main__":
     import json
 
-    print(json.dumps(buscar_noticias_srag(), ensure_ascii=False, indent=2))
+    print(json.dumps(fetch_srag_news(), ensure_ascii=False, indent=2))

@@ -27,7 +27,7 @@ def test_safe_url_rejeita_esquema_invalido():
 
 
 def test_format_value_converte_taxa_para_percentual():
-    metric = {"valor": 0.1214, "unidade": "%"}
+    metric = {"value": 0.1214, "unit": "%"}
     assert analyst._format_value(metric) == "12.14%"
 
 

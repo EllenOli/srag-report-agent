@@ -1,11 +1,11 @@
-"""Tool de gráficos — gera os dois gráficos exigidos pelo desafio.
+"""Charts tool — builds the two charts required by the challenge.
 
-    1. Casos diários dos últimos 30 dias.
-    2. Casos mensais dos últimos 12 meses.
+    1. Daily cases over the last 30 days.
+    2. Monthly cases over the last 12 months.
 
-Como nas métricas, as janelas são ancoradas na data mais recente do dataset.
-Os gráficos são salvos como PNG em outputs/ e o caminho é devolvido para o
-agente incluir no relatório.
+As with the metrics, the windows are anchored to the dataset's most recent date.
+Charts are saved as PNG in outputs/ and the path is returned for the agent to
+embed in the report. Titles are kept in Portuguese (report content).
 """
 from __future__ import annotations
 
@@ -17,34 +17,33 @@ Path("outputs", ".matplotlib-cache").mkdir(parents=True, exist_ok=True)
 os.environ.setdefault("MPLCONFIGDIR", str(Path("outputs") / ".matplotlib-cache"))
 
 import matplotlib
-matplotlib.use("Agg")  # backend sem interface (roda em servidor/headless)
+matplotlib.use("Agg")  # headless backend (runs on a server without a display)
 import matplotlib.pyplot as plt
 import pandas as pd
 
 DB_PATH = "data/srag.db"
 OUT_DIR = Path("outputs")
-AZUL = "#2F6DB0"
+BLUE = "#2F6DB0"
 
 
 def _read(db_path: str) -> pd.DataFrame:
     with sqlite3.connect(db_path) as c:
-        df = pd.read_sql("SELECT data_caso FROM srag", c, parse_dates=["data_caso"])
-    return df
+        return pd.read_sql("SELECT data_caso FROM srag", c, parse_dates=["data_caso"])
 
 
-def grafico_casos_diarios(db_path: str = DB_PATH, dias: int = 30) -> str:
+def daily_cases_chart(db_path: str = DB_PATH, days: int = 30) -> str:
     df = _read(db_path)
-    fim = df["data_caso"].max()
-    ini = fim - pd.Timedelta(days=dias)
-    janela = df[(df["data_caso"] > ini) & (df["data_caso"] <= fim)]
-    serie = (janela.groupby(janela["data_caso"].dt.date).size()
-             .reindex(pd.date_range(ini + pd.Timedelta(days=1), fim).date, fill_value=0))
+    end = df["data_caso"].max()
+    start = end - pd.Timedelta(days=days)
+    window = df[(df["data_caso"] > start) & (df["data_caso"] <= end)]
+    series = (window.groupby(window["data_caso"].dt.date).size()
+              .reindex(pd.date_range(start + pd.Timedelta(days=1), end).date, fill_value=0))
 
     OUT_DIR.mkdir(exist_ok=True)
     path = OUT_DIR / "casos_diarios_30d.png"
     fig, ax = plt.subplots(figsize=(9, 4))
-    ax.bar(serie.index, serie.values, color=AZUL)
-    ax.set_title(f"Casos diarios de SRAG - ultimos {dias} dias (ref. {fim.date()})")
+    ax.bar(series.index, series.values, color=BLUE)
+    ax.set_title(f"Casos diarios de SRAG - ultimos {days} dias (ref. {end.date()})")
     ax.set_ylabel("Casos")
     ax.grid(axis="y", alpha=.3)
     fig.autofmt_xdate()
@@ -54,19 +53,19 @@ def grafico_casos_diarios(db_path: str = DB_PATH, dias: int = 30) -> str:
     return path.as_posix()
 
 
-def grafico_casos_mensais(db_path: str = DB_PATH, meses: int = 12) -> str:
+def monthly_cases_chart(db_path: str = DB_PATH, months: int = 12) -> str:
     df = _read(db_path)
-    fim = df["data_caso"].max()
-    ini = (fim - pd.DateOffset(months=meses)).replace(day=1)
-    janela = df[df["data_caso"] >= ini]
-    serie = (janela.groupby(janela["data_caso"].dt.to_period("M")).size())
-    serie.index = serie.index.astype(str)
+    end = df["data_caso"].max()
+    start = (end - pd.DateOffset(months=months)).replace(day=1)
+    window = df[df["data_caso"] >= start]
+    series = window.groupby(window["data_caso"].dt.to_period("M")).size()
+    series.index = series.index.astype(str)
 
     OUT_DIR.mkdir(exist_ok=True)
     path = OUT_DIR / "casos_mensais_12m.png"
     fig, ax = plt.subplots(figsize=(9, 4))
-    ax.plot(serie.index, serie.values, marker="o", color=AZUL, linewidth=2)
-    ax.set_title(f"Casos mensais de SRAG - ultimos {meses} meses (ref. {fim.date()})")
+    ax.plot(series.index, series.values, marker="o", color=BLUE, linewidth=2)
+    ax.set_title(f"Casos mensais de SRAG - ultimos {months} meses (ref. {end.date()})")
     ax.set_ylabel("Casos")
     ax.grid(alpha=.3)
     fig.autofmt_xdate()
@@ -76,12 +75,12 @@ def grafico_casos_mensais(db_path: str = DB_PATH, meses: int = 12) -> str:
     return path.as_posix()
 
 
-def gerar_todos(db_path: str = DB_PATH) -> dict:
+def generate_all_charts(db_path: str = DB_PATH) -> dict:
     return {
-        "casos_diarios": grafico_casos_diarios(db_path),
-        "casos_mensais": grafico_casos_mensais(db_path),
+        "daily": daily_cases_chart(db_path),
+        "monthly": monthly_cases_chart(db_path),
     }
 
 
 if __name__ == "__main__":
-    print(gerar_todos())
+    print(generate_all_charts())

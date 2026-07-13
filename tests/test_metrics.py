@@ -32,31 +32,31 @@ def sample_db(tmp_path):
 
 
 def test_mortalidade_ignora_desconhecidos(sample_db):
-    m = metrics.taxa_mortalidade(sample_db)
+    m = metrics.mortality_rate(sample_db)
     # 2 obitos entre 4 desfechos conhecidos (exclui o evolucao=9) -> 0.5
-    assert m.numerador == 2
-    assert m.denominador == 4
-    assert m.valor == 0.5
+    assert m.numerator == 2
+    assert m.denominator == 4
+    assert m.value == 0.5
 
 
 def test_ocupacao_uti_e_proxy_entre_conhecidos(sample_db):
-    m = metrics.taxa_ocupacao_uti(sample_db)
+    m = metrics.icu_occupancy_rate(sample_db)
     # uti=1 em 3 casos; conhecidos (1 ou 2) = 4 -> 0.75
-    assert m.numerador == 3
-    assert m.denominador == 4
-    assert m.valor == 0.75
+    assert m.numerator == 3
+    assert m.denominator == 4
+    assert m.value == 0.75
 
 
 def test_vacinacao_escolhe_coluna_com_mais_cobertura(sample_db):
     # vacina_covid e todo NULL; vacina_gripe tem cobertura -> deve escolher gripe
-    m = metrics.taxa_vacinacao(sample_db)
-    assert "gripe" in m.nome.lower()
-    assert m.denominador == 4  # 1,2,1,2 conhecidos (o 9 e ignorado)
+    m = metrics.vaccination_rate(sample_db)
+    assert "gripe" in m.name.lower()
+    assert m.denominator == 4  # 1,2,1,2 conhecidos (o 9 e ignorado)
 
 
 def test_taxas_estao_no_intervalo_valido(sample_db):
-    for m in (metrics.taxa_mortalidade(sample_db),
-              metrics.taxa_ocupacao_uti(sample_db),
-              metrics.taxa_vacinacao(sample_db)):
-        assert 0.0 <= m.valor <= 1.0
-        assert m.numerador <= m.denominador
+    for m in (metrics.mortality_rate(sample_db),
+              metrics.icu_occupancy_rate(sample_db),
+              metrics.vaccination_rate(sample_db)):
+        assert 0.0 <= m.value <= 1.0
+        assert m.numerator <= m.denominator
