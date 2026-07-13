@@ -18,3 +18,6 @@ outputs/
 # SO
 .DS_Store
 Thumbs.db
+
+# Material privado de estudo (NAO publicar) — fica so local
+docs/defesa.md
