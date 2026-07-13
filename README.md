@@ -1,3 +1,6 @@
+<!-- Language selector -->
+**🌐 Read this in:** English · [Português](README.pt-BR.md)
+
 # SRAG Report Agent — AI-Generated Epidemiological Reports
 
 A Proof of Concept for **Indicium HealthCare Inc.**: an AI agent that queries a

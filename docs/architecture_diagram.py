@@ -43,18 +43,18 @@ def build():
     ax.set_ylim(0, 9)
     ax.axis("off")
 
-    ax.text(6, 8.7, "Agente de Geração de Relatório de SRAG — Arquitetura",
+    ax.text(6, 8.7, "SRAG Report Generation Agent — Architecture",
             ha="center", fontsize=14, weight="bold", color=NAVY)
     ax.text(6, 8.3, "Indicium HealthCare — PoC", ha="center", fontsize=9, color=GREY)
 
-    # Entrada
-    box(ax, 0.4, 7.2, 2.3, 0.8, 'Solicitação\n"Gerar relatório"', fc="#fff", ec=GREY, tc=GREY)
+    # Entry point
+    box(ax, 0.4, 7.2, 2.3, 0.8, 'Request\n"Generate report"', fc="#fff", ec=GREY, tc=GREY)
 
-    # Orquestrador (container)
+    # Orchestrator (container)
     ax.add_patch(FancyBboxPatch(
         (0.4, 3.5), 11.2, 3.2, boxstyle="round,pad=0.02,rounding_size=0.08",
         linewidth=2, edgecolor=NAVY, facecolor="#F4F7FB", zorder=0))
-    ax.text(6, 6.45, "AGENTE PRINCIPAL — Orquestrador (LangGraph)",
+    ax.text(6, 6.45, "MAIN AGENT — Orchestrator (LangGraph)",
             ha="center", fontsize=10.5, weight="bold", color=NAVY)
 
     nodes = ["plan", "metrics", "charts", "news", "analyze\n(LLM)", "validate", "report"]
@@ -73,11 +73,11 @@ def build():
 
     arrow(ax, (1.5, 7.2), (1.475, 5.7), color=GREY)  # entrada -> plan
 
-    # Recursos externos (embaixo)
-    box(ax, 1.6, 1.9, 2.0, 0.9, "Banco SQLite\n(dados tratados\nDATASUS)", fc="#EAF6F0", ec=GREEN, tc=GREEN)
-    box(ax, 4.1, 1.9, 2.0, 0.9, "Matplotlib\n(gráficos PNG)", fc="#EAF6F0", ec=GREEN, tc=GREEN)
-    box(ax, 6.6, 1.9, 2.3, 0.9, "Notícias em tempo real\nTavily → DuckDuckGo\n(fallback)", fc="#FDF3E6", ec=AMBER, tc=AMBER)
-    box(ax, 9.2, 1.9, 2.0, 0.9, "LLM OpenAI\n(gpt-4o-mini)", fc="#DDEBFF", ec=NAVY, tc=NAVY)
+    # External resources (bottom)
+    box(ax, 1.6, 1.9, 2.0, 0.9, "SQLite database\n(cleaned DATASUS\ndata)", fc="#EAF6F0", ec=GREEN, tc=GREEN)
+    box(ax, 4.1, 1.9, 2.0, 0.9, "Matplotlib\n(PNG charts)", fc="#EAF6F0", ec=GREEN, tc=GREEN)
+    box(ax, 6.6, 1.9, 2.3, 0.9, "Real-time news\nTavily → DuckDuckGo\n(fallback)", fc="#FDF3E6", ec=AMBER, tc=AMBER)
+    box(ax, 9.2, 1.9, 2.0, 0.9, "OpenAI LLM\n(gpt-4o-mini)", fc="#DDEBFF", ec=NAVY, tc=NAVY)
 
     # ligacoes nodes -> recursos
     arrow(ax, (centers[1][0], 4.6), (2.6, 2.8), color=GREEN)   # metrics -> sqlite
@@ -85,10 +85,10 @@ def build():
     arrow(ax, (centers[3][0], 4.6), (7.7, 2.8), color=AMBER)   # news -> tavily
     arrow(ax, (centers[4][0], 4.6), (10.2, 2.8), color=NAVY)   # analyze -> llm
 
-    # Saidas (direita/baixo)
-    box(ax, 0.4, 0.3, 3.5, 0.9, "Relatório final (Markdown/PDF)\nmétricas + gráficos + contexto", fc="#fff", ec=BLUE)
-    box(ax, 4.2, 0.3, 3.3, 0.9, "Guardrails\nLLM não calcula · sanitização\n· disclaimer médico", fc="#fff", ec=AMBER, tc=AMBER)
-    box(ax, 7.8, 0.3, 3.4, 0.9, "Log de auditoria (JSONL)\ndecisões, tool calls, LLM", fc="#fff", ec=GREY, tc=GREY)
+    # Outputs (bottom)
+    box(ax, 0.4, 0.3, 3.5, 0.9, "Final report (Markdown/PDF)\nmetrics + charts + context", fc="#fff", ec=BLUE)
+    box(ax, 4.2, 0.3, 3.3, 0.9, "Guardrails\nLLM doesn't compute · sanitization\n· medical disclaimer", fc="#fff", ec=AMBER, tc=AMBER)
+    box(ax, 7.8, 0.3, 3.4, 0.9, "Audit log (JSONL)\ndecisions, tool calls, LLM", fc="#fff", ec=GREY, tc=GREY)
 
     arrow(ax, (centers[6][0], 4.6), (2.1, 1.2), color=BLUE)    # report -> relatorio
     arrow(ax, (6.0, 3.5), (6.0, 1.25), color=AMBER, style="-")  # guardrails aplicados no fluxo
