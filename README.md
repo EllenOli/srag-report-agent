@@ -118,6 +118,9 @@ python -m src.agent.orchestrator --dry    # "dry" version (no news/LLM)
 The report is written to `outputs/relatorio_srag_completo.md`, charts to
 `outputs/*.png`, and a structured audit log to `outputs/audit_*.jsonl`.
 
+> 📄 See a **[sample output](docs/example/sample_report.md)** (report + charts)
+> rendered directly in the repository.
+
 ### Run the tests
 
 ```bash
